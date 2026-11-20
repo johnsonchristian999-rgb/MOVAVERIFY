@@ -42,13 +42,6 @@ export async function recoverSupabasePassword(email) {
   if (error) throw error
 }
 
-export async function resendSupabaseConfirmation(email) {
-  requireSupabase()
-  if (!email?.trim()) throw new Error('Enter the email address for your account.')
-  const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() })
-  if (error) throw error
-}
-
 export async function logoutSupabaseUser() {
   requireSupabase()
   const { error } = await supabase.auth.signOut()
