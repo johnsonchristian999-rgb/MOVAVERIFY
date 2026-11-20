@@ -11,7 +11,7 @@ const config = {
 }
 
 export const firebaseConfigured = Object.values(config).every(Boolean)
-export const firebaseApp = firebaseConfigured ? (getApps()[0] || initializeApp(config)) : null
+export const firebaseApp = firebaseConfigured ? getApps()[0] || initializeApp(config) : null
 export const auth = firebaseApp ? getAuth(firebaseApp) : null
 export const db = firebaseApp ? getFirestore(firebaseApp) : null
 export const functions = firebaseApp ? getFunctions(firebaseApp) : null

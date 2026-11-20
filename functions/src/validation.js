@@ -14,8 +14,10 @@ export function requireAmount(value) {
 }
 
 export function constantTimeEqual(left, right) {
-  if (typeof left !== 'string' || typeof right !== 'string' || left.length !== right.length) return false
+  if (typeof left !== 'string' || typeof right !== 'string' || left.length !== right.length)
+    return false
   let difference = 0
-  for (let index = 0; index < left.length; index += 1) difference |= left.charCodeAt(index) ^ right.charCodeAt(index)
+  for (let index = 0; index < left.length; index += 1)
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index)
   return difference === 0
 }

@@ -15,7 +15,9 @@ function requireAuth() {
 export async function registerUser({ name, email, password }) {
   requireAuth()
   if (!name?.trim() || !email?.trim() || password?.length < 10) {
-    throw new Error('Enter your name, a valid email address, and a password of at least 10 characters.')
+    throw new Error(
+      'Enter your name, a valid email address, and a password of at least 10 characters.',
+    )
   }
   const credential = await createUserWithEmailAndPassword(auth, email.trim(), password)
   await updateProfile(credential.user, { displayName: name.trim() })

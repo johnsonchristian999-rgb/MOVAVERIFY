@@ -9,9 +9,12 @@
     "lint": "oxlint && npm --prefix functions run lint",
     "test": "node --test functions/test/*.test.js",
     "test:functions": "npm --prefix functions test",
+    "format": "prettier --write src functions/src functions/test package.json vite.config.js firebase.json firestore.indexes.json README.md",
+    "format:check": "prettier --check src functions/src functions/test package.json vite.config.js firebase.json firestore.indexes.json README.md",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.2",
     "firebase": "^12.19.0",
     "lucide-react": "^0.468.0",
     "react": "^19.3.1",
@@ -22,6 +25,8 @@
     "@tailwindcss/vite": "^4.3.5",
     "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.90.0",
+    "prettier": "^3.10.1",
+    "supabase": "^3.2.0",
     "tailwindcss": "^4.3.5",
     "vite": "^8.3.6"
   }
