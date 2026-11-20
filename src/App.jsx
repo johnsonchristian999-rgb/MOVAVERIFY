@@ -78,7 +78,14 @@ function AppLayout({ store }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState('')
+  const [user, setUser] = useState(null)
   const navigate = useNavigate()
+  useEffect(() => {
+    if (!firebaseConfigured || !auth) return undefined
+    return onAuthStateChanged(auth, setUser)
+  }, [])
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Mova Verify User'
+  const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
   const links = [
     { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
     { to: '/buy', label: 'Buy a Number', icon: ShoppingBag },
@@ -109,8 +116,8 @@ function AppLayout({ store }) {
         </nav>
         <div className="sidebar-bottom">
           <div className="security-card"><span className="security-shield"><ShieldCheck size={23} /></span><div><strong>Your account<br />is secure</strong><small>Demo environment · no live provider connection</small></div></div>
-          <button className="profile-button" type="button" onClick={() => showToast('Signed in as Johnson Christian (demo)')}>
-            <span className="avatar">JC</span><span className="profile-copy"><strong>Johnson Christian</strong><small>Demo User</small></span><ChevronDown size={15} />
+          <button className="profile-button" type="button" onClick={() => user ? showToast(`Signed in as ${displayName}`) : navigate('/auth/login')}>
+            <span className="avatar">{user ? initials : 'MV'}</span><span className="profile-copy"><strong>{user ? displayName : 'Guest account'}</strong><small>{user ? user.email : 'Sign in to continue'}</small></span><ChevronDown size={15} />
           </button>
           <button className="logout-button" type="button" onClick={() => showToast('Sign-out is available when Firebase Auth is configured')}><LogOut size={17} />Log Out</button>
         </div>
@@ -120,7 +127,7 @@ function AppLayout({ store }) {
         <header className="topbar">
           <button className="mobile-menu" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu size={21} /></button>
           <label className="global-search"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && navigate(`/orders?q=${encodeURIComponent(search)}`)} placeholder="Search countries, apps or services..." aria-label="Search countries, apps or services" /></label>
-          <div className="topbar-actions"><button className="notification-button" onClick={() => navigate('/inbox')} aria-label="Open notifications"><Bell size={20} /><i>3</i></button><button className="top-profile" onClick={() => navigate('/auth/login')}><span className="avatar">JC</span><strong>Johnson Christian</strong><ChevronDown size={14} /></button></div>
+          <div className="topbar-actions"><button className="notification-button" onClick={() => navigate('/inbox')} aria-label="Open notifications"><Bell size={20} /><i>3</i></button><button className="top-profile" onClick={() => navigate(user ? '/settings' : '/auth/login')}><span className="avatar">{user ? initials : 'MV'}</span><strong>{user ? displayName : 'Sign in'}</strong><ChevronDown size={14} /></button></div>
         </header>
         <Routes>
           <Route path="/" element={<Overview store={store} onBuy={() => navigate('/buy')} onFunds={() => navigate('/wallet')} onToast={showToast} />} />

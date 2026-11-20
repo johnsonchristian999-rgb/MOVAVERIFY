@@ -1,8 +1,11 @@
 import {
   collection,
+  doc,
   onSnapshot,
   orderBy,
   query,
+  serverTimestamp,
+  setDoc,
   where,
 } from 'firebase/firestore'
 import { db, firebaseConfigured } from '../lib/firebase.js'
@@ -20,4 +23,14 @@ export function subscribeToUserMessages(uid, onMessages, onError) {
   return onSnapshot(messagesQuery, (snapshot) => {
     onMessages(snapshot.docs.map((message) => ({ id: message.id, ...message.data() })))
   }, onError)
+}
+
+export async function createUserProfile(user, displayName) {
+  if (!firebaseConfigured || !db || !user?.uid) throw new Error('Live profile storage requires Firebase configuration and an authenticated user.')
+  await setDoc(doc(db, 'users', user.uid), {
+    displayName: displayName?.trim() || user.displayName || 'Mova Verify User',
+    email: user.email || '',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
 }

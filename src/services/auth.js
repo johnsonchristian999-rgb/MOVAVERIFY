@@ -6,6 +6,7 @@ import {
   updateProfile,
 } from 'firebase/auth'
 import { auth, firebaseConfigured } from '../lib/firebase.js'
+import { createUserProfile } from './firestore.js'
 
 function requireAuth() {
   if (!firebaseConfigured || !auth) throw new Error('Firebase Authentication is not configured.')
@@ -18,6 +19,7 @@ export async function registerUser({ name, email, password }) {
   }
   const credential = await createUserWithEmailAndPassword(auth, email.trim(), password)
   await updateProfile(credential.user, { displayName: name.trim() })
+  await createUserProfile(credential.user, name.trim())
   return credential.user
 }
 
