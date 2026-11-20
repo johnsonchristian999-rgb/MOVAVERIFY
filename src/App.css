@@ -37,6 +37,97 @@
   align-items: center;
   justify-content: center;
 }
+.auth-brand .brand-mark {
+  display: none;
+}
+.auth-brand::before {
+  content: 'M';
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(156, 255, 0, 0.8);
+  border-radius: 15px;
+  background: linear-gradient(145deg, #9cff00, #27a849);
+  box-shadow:
+    0 10px 25px rgba(75, 207, 33, 0.28),
+    inset 0 0 0 4px rgba(5, 30, 18, 0.18);
+  color: #06120f;
+  font-family: Manrope, sans-serif;
+  font-size: 25px;
+  font-weight: 800;
+  transform: rotate(-6deg);
+}
+.auth-brand > strong {
+  margin-left: 12px;
+  color: #eaf8ef;
+  font-family: Manrope, sans-serif;
+  font-size: 18px;
+  letter-spacing: 1.8px;
+}
+.auth-view {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 64px);
+  background: radial-gradient(circle at 50% 15%, rgba(156, 255, 0, 0.08), transparent 34%);
+}
+.auth-panel {
+  width: min(430px, 100%);
+  padding: 34px 36px 30px;
+  border-color: #234a3b;
+  background: linear-gradient(145deg, #0c211b, #081812);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+.auth-panel .eyebrow {
+  margin: 28px 0 8px;
+  color: #9cff00;
+}
+.auth-panel h1 {
+  margin: 0;
+  color: #effaf3;
+  font-family: Manrope, sans-serif;
+  font-size: 26px;
+}
+.auth-panel .subtitle {
+  margin: 8px 0 22px;
+  color: #91aa9e;
+}
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+.auth-form .field-label {
+  color: #cde2d5;
+}
+.auth-form .field-label input {
+  background: #081812;
+  border-color: #2a5442;
+  color: #effaf3;
+}
+.auth-links {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+  color: #9cff00;
+  font-size: 10px;
+}
+.back-link {
+  display: block;
+  margin-top: 18px;
+  color: #809c8e;
+  font-size: 10px;
+  text-align: center;
+}
+.auth-error {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #a84b5d;
+  border-radius: 7px;
+  background: rgba(168, 75, 93, 0.14);
+  color: #ffb5c0;
+  font-size: 10px;
+}
 .brand-accent {
   color: #9cff00;
 }
