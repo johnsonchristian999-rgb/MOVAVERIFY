@@ -56,3 +56,14 @@ export async function listUserTransactions() {
     time: new Date(item.created_at).toLocaleString(),
   }))
 }
+
+export function subscribeToUserTable(table, callback) {
+  if (!supabaseConfigured || !supabase) return () => {}
+  const channel = supabase
+    .channel(`${table}-changes`)
+    .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
+    .subscribe()
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}
