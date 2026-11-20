@@ -34,3 +34,18 @@ export async function createUserProfile(user, displayName) {
     updatedAt: serverTimestamp(),
   })
 }
+
+export function subscribeToUserOrders(uid, onOrders, onError) {
+  if (!firebaseConfigured || !db || !uid) {
+    onError?.(new Error('Live orders require Firebase configuration and an authenticated user.'))
+    return () => {}
+  }
+  const ordersQuery = query(
+    collection(db, 'orders'),
+    where('uid', '==', uid),
+    orderBy('createdAt', 'desc'),
+  )
+  return onSnapshot(ordersQuery, (snapshot) => {
+    onOrders(snapshot.docs.map((order) => ({ id: order.id, ...order.data() })))
+  }, onError)
+}

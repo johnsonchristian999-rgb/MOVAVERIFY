@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { auth, firebaseConfigured } from './lib/firebase.js'
 import { loginUser, recoverPassword, registerUser } from './services/auth.js'
-import { subscribeToUserMessages } from './services/firestore.js'
+import { subscribeToUserMessages, subscribeToUserOrders } from './services/firestore.js'
 import './App.css'
 
 const services = ['WhatsApp', 'Telegram', 'Google', 'Facebook', 'Instagram', 'TikTok', 'Microsoft', 'Other']
@@ -79,13 +79,22 @@ function AppLayout({ store }) {
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState('')
   const [user, setUser] = useState(null)
+  const [liveOrders, setLiveOrders] = useState([])
   const navigate = useNavigate()
   useEffect(() => {
     if (!firebaseConfigured || !auth) return undefined
     return onAuthStateChanged(auth, setUser)
   }, [])
+  useEffect(() => {
+    if (!user) {
+      setLiveOrders([])
+      return undefined
+    }
+    return subscribeToUserOrders(user.uid, setLiveOrders, (error) => showToast(error.message))
+  }, [user])
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Mova Verify User'
   const initials = displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+  const accountOrders = user ? liveOrders : store.orders
   const links = [
     { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
     { to: '/buy', label: 'Buy a Number', icon: ShoppingBag },
@@ -132,8 +141,8 @@ function AppLayout({ store }) {
         <Routes>
           <Route path="/" element={<Overview store={store} onBuy={() => navigate('/buy')} onFunds={() => navigate('/wallet')} onToast={showToast} />} />
           <Route path="/buy" element={<BuyPage store={store} onToast={showToast} />} />
-          <Route path="/orders" element={<OrdersPage orders={store.orders} />} />
-          <Route path="/inbox" element={<InboxPage orders={store.orders} />} />
+          <Route path="/orders" element={<OrdersPage orders={accountOrders} />} />
+          <Route path="/inbox" element={<InboxPage orders={accountOrders} />} />
           <Route path="/wallet" element={<WalletPage store={store} onToast={showToast} />} />
           <Route path="/transactions" element={<TransactionsPage store={store} />} />
           <Route path="/support" element={<SupportPage onToast={showToast} />} />
