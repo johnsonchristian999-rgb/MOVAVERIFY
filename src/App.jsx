@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { BrowserRouter, Link, NavLink, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import {
   ArrowDownLeft, ArrowLeftRight, ArrowRight, BadgeCheck, Bell, Check, ChevronDown,
@@ -197,7 +197,14 @@ function BuyPage({ store, onToast }) {
 
 function OrdersPage({ orders }) {
   const [filter, setFilter] = useState('All orders')
-  const filtered = orders.filter((order) => filter === 'All orders' || order.status === filter)
+  const [searchParams] = useSearchParams()
+  const [query] = useState(searchParams.get('q') || '')
+  const normalizedQuery = query.trim().toLowerCase()
+  const filtered = orders.filter((order) => {
+    const matchesFilter = filter === 'All orders' || order.status === filter
+    const searchable = `${order.service} ${order.country} ${order.number} ${order.id}`.toLowerCase()
+    return matchesFilter && (!normalizedQuery || searchable.includes(normalizedQuery))
+  })
   return <div className="view-root"><PageHeader eyebrow="Account activity" title="My Orders" description="Review your demo verification requests and order statuses."><select className="select-control" value={filter} onChange={(event) => setFilter(event.target.value)}><option>All orders</option><option>Completed</option><option>Waiting for SMS</option><option>Expired</option></select></PageHeader><div className="panel table-panel"><div className="table-intro"><strong>{filtered.length} orders</strong><span>Demo data · no provider connections</span></div><div className="table-scroll"><table><thead><tr><th>Service</th><th>Country / number</th><th>Order ID</th><th>Status</th><th>Amount</th><th>Placed</th></tr></thead><tbody>{filtered.map((order) => <tr key={order.id}><td><b>{order.service}</b></td><td><span className="flag">{order.flag}</span> {order.number}</td><td>{order.id}</td><td><span className={`status-pill ${order.status.toLowerCase().replaceAll(' ', '-')}`}>{order.status}</span></td><td>₦{order.amount.toLocaleString()}</td><td>{order.time}</td></tr>)}</tbody></table></div></div></div>
 }
 
