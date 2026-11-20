@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "mova-verify"
+  },
+  "targets": {
+    "mova-verify": {
+      "hosting": {
+        "mova-verify": [
+          "mova-verify"
+        ]
+      }
+    }
+  }
+}
