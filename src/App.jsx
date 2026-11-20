@@ -99,7 +99,7 @@ function AppLayout({ store }) {
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
         <NavLink className="brand" to="/" onClick={() => setMobileOpen(false)}>
           <span className="brand-mark"><span>✦</span></span>
-          <span className="brand-copy"><strong>NUMORA</strong><small>Global Verification</small></span>
+          <span className="brand-copy"><strong>MOVA<span className="brand-accent">VERIFY</span></strong><small>Move Value. Move Forward.</small></span>
         </NavLink>
         <nav className="primary-nav" aria-label="Main navigation">
           {links.map(({ to, label, icon: Icon, badge, end }) => (
@@ -136,7 +136,7 @@ function AppLayout({ store }) {
           <Route path="/admin/*" element={<AdminPage onToast={showToast} />} />
           <Route path="*" element={<Overview store={store} onBuy={() => navigate('/buy')} onFunds={() => navigate('/wallet')} onToast={showToast} />} />
         </Routes>
-        <footer className="app-footer"><span><b>DEMO MODE</b> · Simulated orders, balance and SMS. No real numbers or payments.</span><span>Global Verification · Help&nbsp; · &nbsp;Privacy</span></footer>
+        <footer className="app-footer"><span><b>DEMO MODE</b> · Simulated orders, balance and SMS. No real numbers or payments.</span><span>Mova Verify · Help&nbsp; · &nbsp;Privacy</span></footer>
       </main>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
