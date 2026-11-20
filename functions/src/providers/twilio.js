@@ -31,12 +31,12 @@ export function createTwilioProvider(env = process.env) {
         )
       if (!accountSid || !authToken)
         throw new Error('Twilio credentials are not configured on the server.')
-      if (!env.NUMORA_TWILIO_SMS_WEBHOOK_URL)
+      if (!env.MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL)
         throw new Error('The signed SMS webhook URL is not configured.')
       const client = twilio(accountSid, authToken)
       const number = await client.incomingPhoneNumbers.create({
         phoneNumber,
-        smsUrl: env.NUMORA_TWILIO_SMS_WEBHOOK_URL,
+        smsUrl: env.MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL,
         smsMethod: 'POST',
       })
       return { sid: number.sid, phoneNumber: number.phoneNumber }

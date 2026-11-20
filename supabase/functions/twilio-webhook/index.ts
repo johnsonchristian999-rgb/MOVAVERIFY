@@ -3,7 +3,7 @@ import { adminClient } from '../_shared/auth.ts'
 
 async function validSignature(request: Request, rawBody: string) {
   const signature = request.headers.get('x-twilio-signature') || ''
-  const url = Deno.env.get('NUMORA_TWILIO_SMS_WEBHOOK_URL') || ''
+  const url = Deno.env.get('MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL') || ''
   const params = new URLSearchParams(rawBody)
   const canonical =
     url +
@@ -46,16 +46,14 @@ Deno.serve(async (request) => {
     .limit(1)
     .maybeSingle()
   if (order)
-    await supabase
-      .from('messages')
-      .upsert({
-        id: sid,
-        user_id: order.user_id,
-        order_id: order.id,
-        sender,
-        recipient,
-        body: message,
-      })
+    await supabase.from('messages').upsert({
+      id: sid,
+      user_id: order.user_id,
+      order_id: order.id,
+      sender,
+      recipient,
+      body: message,
+    })
   return new Response('<Response></Response>', {
     headers: { ...corsHeaders, 'Content-Type': 'text/xml' },
   })

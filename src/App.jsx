@@ -106,17 +106,17 @@ const seedOrders = [
 function useDemoStore() {
   const [orders, setOrders] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('numora-demo-orders')) || seedOrders
+      return JSON.parse(localStorage.getItem('mova-verify-demo-orders')) || seedOrders
     } catch {
       return seedOrders
     }
   })
   const [balance, setBalance] = useState(
-    () => Number(localStorage.getItem('numora-demo-balance')) || 25000,
+    () => Number(localStorage.getItem('mova-verify-demo-balance')) || 25000,
   )
   const [transactions, setTransactions] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('numora-demo-transactions')) || []
+      return JSON.parse(localStorage.getItem('mova-verify-demo-transactions')) || []
     } catch {
       return []
     }
@@ -154,9 +154,9 @@ function useDemoStore() {
     setOrders(nextOrders)
     setBalance(nextBalance)
     setTransactions(nextTransactions)
-    localStorage.setItem('numora-demo-orders', JSON.stringify(nextOrders))
-    localStorage.setItem('numora-demo-balance', String(nextBalance))
-    localStorage.setItem('numora-demo-transactions', JSON.stringify(nextTransactions))
+    localStorage.setItem('mova-verify-demo-orders', JSON.stringify(nextOrders))
+    localStorage.setItem('mova-verify-demo-balance', String(nextBalance))
+    localStorage.setItem('mova-verify-demo-transactions', JSON.stringify(nextTransactions))
     return { order }
   }
 
@@ -173,8 +173,8 @@ function useDemoStore() {
     const nextTransactions = [transaction, ...transactions]
     setBalance(nextBalance)
     setTransactions(nextTransactions)
-    localStorage.setItem('numora-demo-balance', String(nextBalance))
-    localStorage.setItem('numora-demo-transactions', JSON.stringify(nextTransactions))
+    localStorage.setItem('mova-verify-demo-balance', String(nextBalance))
+    localStorage.setItem('mova-verify-demo-transactions', JSON.stringify(nextTransactions))
   }
 
   return { orders, balance, transactions, purchaseOrder, addDemoFunds }
@@ -1189,7 +1189,7 @@ function SettingsPage({ user, onToast }) {
       <PageHeader
         eyebrow="Account"
         title="Settings"
-        description="Manage profile and security preferences for your Numora account."
+        description="Manage profile and security preferences for your Mova Verify account."
       />
       <div className="settings-layout">
         <section className="panel settings-panel">
@@ -1351,7 +1351,7 @@ function AuthPage({ onToast }) {
           <span className="brand-mark">
             <span>✦</span>
           </span>
-          <strong>NUMORA</strong>
+          <strong>MOVA VERIFY</strong>
         </div>
         <p className="eyebrow">GLOBAL VERIFICATION</p>
         <h1>
@@ -1363,7 +1363,7 @@ function AuthPage({ onToast }) {
         </h1>
         <p className="subtitle">
           {supabaseConfigured
-            ? 'Use your Numora account to continue.'
+            ? 'Use your Mova Verify account to continue.'
             : 'Supabase Auth is not configured. Demo mode remains available.'}
         </p>
         {error && (

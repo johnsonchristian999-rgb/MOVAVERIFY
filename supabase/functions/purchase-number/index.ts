@@ -66,26 +66,22 @@ Deno.serve(async (request) => {
         if (error) throw error
         return data
       })
-    await supabase
-      .from('wallets')
-      .upsert({
-        user_id: user.id,
-        balance_naira: (wallet?.balance_naira || 0) - priceNaira,
-        updated_at: new Date().toISOString(),
-      })
-    await supabase
-      .from('transactions')
-      .insert({
-        id: order.id,
-        user_id: user.id,
-        type: 'debit',
-        amount_naira: priceNaira,
-        reference: order.id,
-        status: 'reserved',
-      })
+    await supabase.from('wallets').upsert({
+      user_id: user.id,
+      balance_naira: (wallet?.balance_naira || 0) - priceNaira,
+      updated_at: new Date().toISOString(),
+    })
+    await supabase.from('transactions').insert({
+      id: order.id,
+      user_id: user.id,
+      type: 'debit',
+      amount_naira: priceNaira,
+      reference: order.id,
+      status: 'reserved',
+    })
     const form = new URLSearchParams({
       PhoneNumber: number,
-      SmsUrl: Deno.env.get('NUMORA_TWILIO_SMS_WEBHOOK_URL') || '',
+      SmsUrl: Deno.env.get('MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL') || '',
     })
     const purchaseResponse = await fetch(`${twilioBase()}/IncomingPhoneNumbers.json`, {
       method: 'POST',

@@ -18,7 +18,7 @@ const db = getFirestore()
 const twilioAccountSid = defineSecret('TWILIO_ACCOUNT_SID')
 const twilioAuthToken = defineSecret('TWILIO_AUTH_TOKEN')
 const twilioResaleApproved = defineSecret('TWILIO_RESALE_APPROVED')
-const twilioWebhookUrl = defineSecret('NUMORA_TWILIO_SMS_WEBHOOK_URL')
+const twilioWebhookUrl = defineSecret('MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL')
 
 function twilioEnvironment() {
   return {
@@ -26,7 +26,7 @@ function twilioEnvironment() {
     TWILIO_ACCOUNT_SID: twilioAccountSid.value(),
     TWILIO_AUTH_TOKEN: twilioAuthToken.value(),
     TWILIO_RESALE_APPROVED: twilioResaleApproved.value(),
-    NUMORA_TWILIO_SMS_WEBHOOK_URL: twilioWebhookUrl.value(),
+    MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL: twilioWebhookUrl.value(),
   }
 }
 

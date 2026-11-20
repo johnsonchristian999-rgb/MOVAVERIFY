@@ -1,6 +1,6 @@
-# NUMORA Global Verification MVP
+# MOVA VERIFY Global Verification MVP
 
-A JavaScript-only React/Vite MVP for global verification account workflows. The UI follows the supplied Numora reference. The default experience is **DEMO MODE**: wallet activity, sample orders and sample inbox messages are simulated, stored in the browser, and never represent real funds, phone numbers, inventory, SMS or completed payments.
+A JavaScript-only React/Vite MVP for global verification account workflows. The UI follows the supplied Mova Verify reference. The default experience is **DEMO MODE**: wallet activity, sample orders and sample inbox messages are simulated, stored in the browser, and never represent real funds, phone numbers, inventory, SMS or completed payments.
 
 ## Requirements
 
@@ -44,7 +44,7 @@ Set `PAYSTACK_SECRET_KEY` through Firebase Functions Secret Manager. The client 
 
 ## Twilio setup and compliance gate
 
-Before enabling live number purchasing, verify Twilio's current terms and get written approval for the intended number allocation, verification and resale model. Keep `TWILIO_RESALE_APPROVED` unset/false until approved. Store `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `NUMORA_TWILIO_SMS_WEBHOOK_URL` in Functions environment/secrets, not in `.env.local` or frontend code. Configure and test the signed inbound SMS webhook. Live purchasing fails closed when approval, credentials, catalog pricing, or provider inventory are unavailable.
+Before enabling live number purchasing, verify Twilio's current terms and get written approval for the intended number allocation, verification and resale model. Keep `TWILIO_RESALE_APPROVED` unset/false until approved. Store `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL` in Functions environment/secrets, not in `.env.local` or frontend code. Configure and test the signed inbound SMS webhook. Live purchasing fails closed when approval, credentials, catalog pricing, or provider inventory are unavailable.
 
 Provider exceptions after an allocation attempt leave the wallet debit reserved and the order in `provider_review`; reconcile provider state before refunding to avoid duplicate number purchases or double credits.
 

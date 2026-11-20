@@ -1,8 +1,10 @@
 {
-  "name": "numora-functions",
+  "name": "mova-verify-functions",
   "private": true,
   "type": "module",
-  "engines": { "node": "20" },
+  "engines": {
+    "node": "20"
+  },
   "main": "index.js",
   "scripts": {
     "lint": "node --check index.js && node --check src/payments/paystack.js && node --check src/providers/twilio.js",
