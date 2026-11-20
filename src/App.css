@@ -41,29 +41,19 @@
   display: none;
 }
 .auth-brand::before {
-  content: 'M';
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(156, 255, 0, 0.8);
-  border-radius: 15px;
-  background: linear-gradient(145deg, #9cff00, #27a849);
-  box-shadow:
-    0 10px 25px rgba(75, 207, 33, 0.28),
-    inset 0 0 0 4px rgba(5, 30, 18, 0.18);
-  color: #06120f;
-  font-family: Manrope, sans-serif;
-  font-size: 25px;
-  font-weight: 800;
-  transform: rotate(-6deg);
+  content: '';
+  width: 166px;
+  height: 45px;
+  display: block;
+  background-image: url('/mova-verify-reference.jpeg');
+  background-repeat: no-repeat;
+  background-size: 1038px 692px;
+  background-position: -34px -6px;
+  border-radius: 4px;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.2));
 }
 .auth-brand > strong {
-  margin-left: 12px;
-  color: #eaf8ef;
-  font-family: Manrope, sans-serif;
-  font-size: 18px;
-  letter-spacing: 1.8px;
+  display: none;
 }
 .auth-view {
   display: grid;
