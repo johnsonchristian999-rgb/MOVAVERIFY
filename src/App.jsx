@@ -37,6 +37,7 @@ import {
   logoutSupabaseUser,
   recoverSupabasePassword,
   registerSupabaseUser,
+  resendSupabaseConfirmation,
   subscribeToSupabaseAuth,
 } from './services/supabaseAuth.js'
 import { supabaseConfigured } from './lib/supabase.js'
@@ -1318,28 +1319,42 @@ function AuthPage({ onToast }) {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [emailForResend, setEmailForResend] = useState('')
   async function submit(event) {
     event.preventDefault()
     setBusy(true)
     setError('')
+    setNotice('')
     const form = new FormData(event.currentTarget)
     try {
-      if (mode === 'register')
-        await registerSupabaseUser({
+      if (mode === 'register') {
+        const result = await registerSupabaseUser({
           name: form.get('name'),
           email: form.get('email'),
           password: form.get('password'),
         })
+        if (!result.session) {
+          setNotice('Account created. Check your email and confirm your address before signing in.')
+          return
+        }
+      }
       if (mode === 'login')
         await loginSupabaseUser({
           email: form.get('email'),
           password: form.get('password'),
         })
+      setEmailForResend(form.get('email'))
       if (mode === 'recover') await recoverSupabasePassword(form.get('email'))
       onToast(mode === 'recover' ? 'Password recovery email sent.' : 'You are signed in.')
       if (mode !== 'recover') navigate('/')
     } catch (authError) {
-      setError(authError.message || 'Authentication could not be completed.')
+      const message = authError.message || 'Authentication could not be completed.'
+      setError(
+        message.toLowerCase().includes('email not confirmed')
+          ? 'Please confirm your email address before signing in.'
+          : message,
+      )
     } finally {
       setBusy(false)
     }
@@ -1369,6 +1384,11 @@ function AuthPage({ onToast }) {
         {error && (
           <div className="auth-error" role="alert">
             {error}
+          </div>
+        )}
+        {notice && (
+          <div className="auth-notice" role="status">
+            {notice}
           </div>
         )}
         <form onSubmit={submit} className="auth-form">
@@ -1409,6 +1429,22 @@ function AuthPage({ onToast }) {
             <ArrowRight size={15} />
           </button>
         </form>
+        {mode === 'login' && emailForResend && error.toLowerCase().includes('confirm') && (
+          <button
+            className="button button-secondary auth-resend"
+            type="button"
+            onClick={async () => {
+              try {
+                await resendSupabaseConfirmation(emailForResend)
+                setNotice('A new confirmation email has been sent.')
+              } catch (resendError) {
+                setError(resendError.message)
+              }
+            }}
+          >
+            Resend confirmation email
+          </button>
+        )}
         {!supabaseConfigured && (
           <button
             className="button button-secondary auth-demo-button"

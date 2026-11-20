@@ -24,7 +24,7 @@ export async function registerSupabaseUser({ name, email, password }) {
     options: { data: { display_name: name.trim() } },
   })
   if (error) throw error
-  return data.user
+  return data
 }
 
 export async function loginSupabaseUser({ email, password }) {
@@ -39,6 +39,13 @@ export async function recoverSupabasePassword(email) {
   requireSupabase()
   if (!email?.trim()) throw new Error('Enter the email address for your account.')
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim())
+  if (error) throw error
+}
+
+export async function resendSupabaseConfirmation(email) {
+  requireSupabase()
+  if (!email?.trim()) throw new Error('Enter the email address for your account.')
+  const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() })
   if (error) throw error
 }
 
