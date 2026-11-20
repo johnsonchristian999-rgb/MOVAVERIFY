@@ -9,7 +9,6 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom'
-import { onAuthStateChanged } from 'firebase/auth'
 import {
   ArrowDownLeft,
   ArrowLeftRight,
@@ -33,8 +32,14 @@ import {
   Wallet,
   Zap,
 } from 'lucide-react'
-import { auth, firebaseConfigured } from './lib/firebase.js'
-import { loginUser, logoutUser, recoverPassword, registerUser } from './services/auth.js'
+import {
+  loginSupabaseUser,
+  logoutSupabaseUser,
+  recoverSupabasePassword,
+  registerSupabaseUser,
+  subscribeToSupabaseAuth,
+} from './services/supabaseAuth.js'
+import { supabaseConfigured } from './lib/supabase.js'
 import {
   initializeWalletFunding,
   purchaseLiveNumber,
@@ -187,8 +192,8 @@ function AppLayout({ store }) {
     window.setTimeout(() => setToast(''), 2600)
   }
   useEffect(() => {
-    if (!firebaseConfigured || !auth) return undefined
-    return onAuthStateChanged(auth, setUser)
+    if (!supabaseConfigured) return undefined
+    return subscribeToSupabaseAuth(setUser)
   }, [])
   useEffect(() => {
     if (!user) return undefined
@@ -233,12 +238,12 @@ function AppLayout({ store }) {
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
   async function handleLogout() {
-    if (!firebaseConfigured || !auth) {
+    if (!supabaseConfigured) {
       showToast('You are using a guest demo account.')
       return
     }
     try {
-      await logoutUser()
+      await logoutSupabaseUser()
       showToast('You have been signed out.')
     } catch (error) {
       showToast(error.message)
@@ -827,8 +832,8 @@ function InboxPage({ orders }) {
   const [liveMessages, setLiveMessages] = useState([])
   const [liveError, setLiveError] = useState('')
   useEffect(() => {
-    if (!firebaseConfigured || !auth) return undefined
-    return onAuthStateChanged(auth, (nextUser) => setUser(nextUser))
+    if (!supabaseConfigured) return undefined
+    return subscribeToSupabaseAuth(setUser)
   }, [])
   useEffect(() => {
     if (!user) return undefined
@@ -1194,11 +1199,11 @@ function SettingsPage({ user, onToast }) {
             <LockKeyhole size={19} />
             <div>
               <strong>Password and sign-in</strong>
-              <small>Firebase Auth setup required for live account security.</small>
+              <small>Supabase Auth manages live account security.</small>
             </div>
             <button
               className="button button-secondary"
-              onClick={() => onToast('Configure Firebase Auth before changing passwords.')}
+              onClick={() => onToast('Password management is handled by Supabase Auth.')}
             >
               Manage
             </button>
@@ -1285,17 +1290,17 @@ function AuthPage({ onToast }) {
     const form = new FormData(event.currentTarget)
     try {
       if (mode === 'register')
-        await registerUser({
+        await registerSupabaseUser({
           name: form.get('name'),
           email: form.get('email'),
           password: form.get('password'),
         })
       if (mode === 'login')
-        await loginUser({
+        await loginSupabaseUser({
           email: form.get('email'),
           password: form.get('password'),
         })
-      if (mode === 'recover') await recoverPassword(form.get('email'))
+      if (mode === 'recover') await recoverSupabasePassword(form.get('email'))
       onToast(mode === 'recover' ? 'Password recovery email sent.' : 'You are signed in.')
       if (mode !== 'recover') navigate('/')
     } catch (authError) {
@@ -1322,9 +1327,9 @@ function AuthPage({ onToast }) {
               : 'Welcome back'}
         </h1>
         <p className="subtitle">
-          {firebaseConfigured
+          {supabaseConfigured
             ? 'Use your Numora account to continue.'
-            : 'Firebase Auth is not configured. Demo mode remains available.'}
+            : 'Supabase Auth is not configured. Demo mode remains available.'}
         </p>
         {error && (
           <div className="auth-error" role="alert">
@@ -1357,7 +1362,7 @@ function AuthPage({ onToast }) {
           <button
             className="button button-primary"
             type="submit"
-            disabled={busy || !firebaseConfigured}
+            disabled={busy || !supabaseConfigured}
           >
             {busy
               ? 'Please wait…'
@@ -1369,7 +1374,7 @@ function AuthPage({ onToast }) {
             <ArrowRight size={15} />
           </button>
         </form>
-        {!firebaseConfigured && (
+        {!supabaseConfigured && (
           <button
             className="button button-secondary auth-demo-button"
             onClick={() => {
