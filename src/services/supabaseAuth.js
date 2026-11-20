@@ -6,14 +6,23 @@ function requireSupabase() {
 
 export function subscribeToSupabaseAuth(callback) {
   if (!supabaseConfigured || !supabase) return () => {}
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session?.user || null))
+  const { data } = supabase.auth.onAuthStateChange((_event, session) =>
+    callback(session?.user || null),
+  )
   return () => data.subscription.unsubscribe()
 }
 
 export async function registerSupabaseUser({ name, email, password }) {
   requireSupabase()
-  if (!name?.trim() || !email?.trim() || password?.length < 10) throw new Error('Enter your name, a valid email address, and a password of at least 10 characters.')
-  const { data, error } = await supabase.auth.signUp({ email: email.trim(), password, options: { data: { display_name: name.trim() } } })
+  if (!name?.trim() || !email?.trim() || password?.length < 10)
+    throw new Error(
+      'Enter your name, a valid email address, and a password of at least 10 characters.',
+    )
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: { data: { display_name: name.trim() } },
+  })
   if (error) throw error
   return data.user
 }
