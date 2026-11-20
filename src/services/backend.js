@@ -1,30 +1,33 @@
-import { httpsCallable } from 'firebase/functions'
-import { functions, firebaseConfigured } from '../lib/firebase.js'
+import { supabase, supabaseConfigured } from '../lib/supabase.js'
 
-function callable(name) {
-  if (!firebaseConfigured || !functions) {
-    throw new Error(
-      'Live backend functions are not configured. Continue in demo mode or configure Firebase first.',
-    )
-  }
-  return httpsCallable(functions, name)
+async function callEdgeFunction(name, body) {
+  if (!supabaseConfigured || !supabase) throw new Error('Supabase backend is not configured.')
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session?.access_token) throw new Error('Sign in before using live backend functions.')
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  const result = await response.json()
+  if (!response.ok) throw new Error(result.error || 'The backend request failed.')
+  return result
 }
 
 export async function initializeWalletFunding(amountNaira) {
-  const result = await callable('initializePaystackFunding')({ amountNaira })
-  return result.data
+  return callEdgeFunction('initialize-paystack', { amountNaira })
 }
 
 export async function verifyWalletFunding(reference) {
-  const result = await callable('verifyPaystackFunding')({ reference })
-  return result.data
+  return callEdgeFunction('verify-paystack', { reference })
 }
 
 export async function purchaseLiveNumber({ countryCode, service, tier }) {
-  const result = await callable('purchaseNumber')({
-    countryCode,
-    service,
-    tier,
-  })
-  return result.data
+  return callEdgeFunction('purchase-number', { countryCode, service, tier })
 }

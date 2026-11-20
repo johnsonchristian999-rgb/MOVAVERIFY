@@ -46,11 +46,11 @@ import {
   verifyWalletFunding,
 } from './services/backend.js'
 import {
-  subscribeToUserMessages,
-  subscribeToUserOrders,
-  subscribeToUserTransactions,
-  subscribeToUserWallet,
-} from './services/firestore.js'
+  getUserWallet,
+  listUserMessages,
+  listUserOrders,
+  listUserTransactions,
+} from './services/supabaseData.js'
 import './App.css'
 
 const services = [
@@ -197,7 +197,15 @@ function AppLayout({ store }) {
   }, [])
   useEffect(() => {
     if (!user) return undefined
-    return subscribeToUserOrders(user.uid, setLiveOrders, (error) => showToast(error.message))
+    let active = true
+    listUserOrders()
+      .then((orders) => {
+        if (active) setLiveOrders(orders)
+      })
+      .catch((error) => showToast(error.message))
+    return () => {
+      active = false
+    }
   }, [user])
   useEffect(() => {
     const reference = searchParams.get('reference') || searchParams.get('trxref')
@@ -837,9 +845,17 @@ function InboxPage({ orders }) {
   }, [])
   useEffect(() => {
     if (!user) return undefined
-    return subscribeToUserMessages(user.uid, setLiveMessages, (error) =>
-      setLiveError(error.message),
-    )
+    let active = true
+    listUserMessages()
+      .then((messages) => {
+        if (active) setLiveMessages(messages)
+      })
+      .catch((error) => {
+        if (active) setLiveError(error.message)
+      })
+    return () => {
+      active = false
+    }
   }, [user])
   const demoMessages = orders
     .filter((order) => order.status === 'Completed')
@@ -914,15 +930,19 @@ function WalletPage({ store, user, onToast }) {
   const [liveTransactions, setLiveTransactions] = useState([])
   useEffect(() => {
     if (!user) return undefined
-    const stopWallet = subscribeToUserWallet(user.uid, setLiveWallet, (error) =>
-      onToast(error.message),
-    )
-    const stopTransactions = subscribeToUserTransactions(user.uid, setLiveTransactions, (error) =>
-      onToast(error.message),
-    )
+    let active = true
+    Promise.all([getUserWallet(), listUserTransactions()])
+      .then(([wallet, transactions]) => {
+        if (active) {
+          setLiveWallet({ balanceNaira: wallet.balance_naira })
+          setLiveTransactions(transactions)
+        }
+      })
+      .catch((error) => {
+        if (active) onToast(error.message)
+      })
     return () => {
-      stopWallet()
-      stopTransactions()
+      active = false
     }
   }, [user, onToast])
   const [busy, setBusy] = useState(false)
