@@ -1,0 +1,16 @@
+{
+  "name": "numora-functions",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "scripts": {
+    "lint": "node --check index.js && node --check src/payments/paystack.js && node --check src/providers/twilio.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0",
+    "twilio": "^5.0.0"
+  }
+}
