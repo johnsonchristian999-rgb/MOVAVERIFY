@@ -50,6 +50,7 @@ import {
   listUserMessages,
   listUserOrders,
   listUserTransactions,
+  subscribeToUserTable,
 } from './services/supabaseData.js'
 import './App.css'
 
@@ -198,13 +199,17 @@ function AppLayout({ store }) {
   useEffect(() => {
     if (!user) return undefined
     let active = true
-    listUserOrders()
-      .then((orders) => {
-        if (active) setLiveOrders(orders)
-      })
-      .catch((error) => showToast(error.message))
+    const refresh = () =>
+      listUserOrders()
+        .then((orders) => {
+          if (active) setLiveOrders(orders)
+        })
+        .catch((error) => showToast(error.message))
+    refresh()
+    const stopRealtime = subscribeToUserTable('orders', refresh)
     return () => {
       active = false
+      stopRealtime()
     }
   }, [user])
   useEffect(() => {
@@ -846,15 +851,19 @@ function InboxPage({ orders }) {
   useEffect(() => {
     if (!user) return undefined
     let active = true
-    listUserMessages()
-      .then((messages) => {
-        if (active) setLiveMessages(messages)
-      })
-      .catch((error) => {
-        if (active) setLiveError(error.message)
-      })
+    const refresh = () =>
+      listUserMessages()
+        .then((messages) => {
+          if (active) setLiveMessages(messages)
+        })
+        .catch((error) => {
+          if (active) setLiveError(error.message)
+        })
+    refresh()
+    const stopRealtime = subscribeToUserTable('messages', refresh)
     return () => {
       active = false
+      stopRealtime()
     }
   }, [user])
   const demoMessages = orders
@@ -931,18 +940,24 @@ function WalletPage({ store, user, onToast }) {
   useEffect(() => {
     if (!user) return undefined
     let active = true
-    Promise.all([getUserWallet(), listUserTransactions()])
-      .then(([wallet, transactions]) => {
-        if (active) {
-          setLiveWallet({ balanceNaira: wallet.balance_naira })
-          setLiveTransactions(transactions)
-        }
-      })
-      .catch((error) => {
-        if (active) onToast(error.message)
-      })
+    const refresh = () =>
+      Promise.all([getUserWallet(), listUserTransactions()])
+        .then(([wallet, transactions]) => {
+          if (active) {
+            setLiveWallet({ balanceNaira: wallet.balance_naira })
+            setLiveTransactions(transactions)
+          }
+        })
+        .catch((error) => {
+          if (active) onToast(error.message)
+        })
+    refresh()
+    const stopWalletRealtime = subscribeToUserTable('wallets', refresh)
+    const stopTransactionRealtime = subscribeToUserTable('transactions', refresh)
     return () => {
       active = false
+      stopWalletRealtime()
+      stopTransactionRealtime()
     }
   }, [user, onToast])
   const [busy, setBusy] = useState(false)
