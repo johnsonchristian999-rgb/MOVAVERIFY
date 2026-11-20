@@ -98,8 +98,7 @@ function AppLayout({ store }) {
     <div className="app-shell">
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
         <NavLink className="brand" to="/" onClick={() => setMobileOpen(false)}>
-          <span className="brand-mark"><span>✦</span></span>
-          <span className="brand-copy"><strong>MOVA<span className="brand-accent">VERIFY</span></strong><small>Move Value. Move Forward.</small></span>
+          <span className="brand-logo" role="img" aria-label="Mova Verify — Move Value. Move Forward." />
         </NavLink>
         <nav className="primary-nav" aria-label="Main navigation">
           {links.map(({ to, label, icon: Icon, badge, end }) => (
