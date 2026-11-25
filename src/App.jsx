@@ -192,7 +192,7 @@ function useDemoStore() {
   return { orders, balance, transactions, purchaseOrder, addDemoFunds }
 }
 
-function AppLayout({ store }) {
+function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState('')
@@ -411,11 +411,8 @@ function AppLayout({ store }) {
           />
           <Route path="/buy" element={<LiveBuy />} />
           <Route path="/orders" element={<OrdersPage orders={accountOrders} />} />
-          <Route path="/inbox" element={<InboxPage orders={accountOrders} />} />
-          <Route
-            path="/wallet"
-            element={<WalletPage store={store} user={user} onToast={showToast} />}
-          />
+          <Route path="/inbox" element={<InboxPage user={user} />} />
+          <Route path="/wallet" element={<WalletPage user={user} onToast={showToast} />} />
           <Route path="/transactions" element={<LiveTransactions />} />
           <Route path="/support" element={<LiveSupport />} />
           <Route path="/settings" element={<LiveSettings user={user} />} />
@@ -866,14 +863,9 @@ function OrdersPage({ orders }) {
   )
 }
 
-function InboxPage({ orders }) {
-  const [user, setUser] = useState(null)
+function InboxPage({ user }) {
   const [liveMessages, setLiveMessages] = useState([])
   const [liveError, setLiveError] = useState('')
-  useEffect(() => {
-    if (!supabaseConfigured) return undefined
-    return subscribeToSupabaseAuth(setUser)
-  }, [])
   useEffect(() => {
     if (!user) return undefined
     let active = true
@@ -892,35 +884,17 @@ function InboxPage({ orders }) {
       stopRealtime()
     }
   }, [user])
-  const demoMessages = orders
-    .filter((order) => order.status === 'Completed')
-    .map((order) => ({
-      ...order,
-      code: 'SIMULATED · 000000',
-      body: `Simulated ${order.service} verification message. No SMS was received.`,
-      receivedAt: order.time,
-      demo: true,
-    }))
-  const messages = user ? liveMessages : demoMessages
+  const messages = liveMessages
   return (
     <div className="view-root">
       <PageHeader
         eyebrow="Messages"
         title="SMS Inbox"
-        description={
-          user
-            ? 'Messages received for your account.'
-            : 'Messages are simulated in this demo. Live inbox requires sign-in and provider configuration.'
-        }
+        description="Messages received for your account."
       />
       <div className="notice-banner">
         <MessageSquare size={18} />
-        <span>
-          {liveError ||
-            (user
-              ? 'Live messages are scoped to your account. No demo messages are mixed into this inbox.'
-              : 'This inbox contains simulated demo content only. No SMS was received.')}
-        </span>
+        <span>{liveError || 'Messages are scoped securely to your account.'}</span>
       </div>
       <section className="panel inbox-list">
         {messages.length ? (
@@ -929,10 +903,9 @@ function InboxPage({ orders }) {
               <span className="flag">{message.flag || '✉'}</span>
               <div className="message-copy">
                 <strong>
-                  {message.service || 'Verification'}{' '}
-                  <span className="demo-chip">{message.demo ? 'SIMULATED' : 'LIVE'}</span>
+                  {message.service || 'Verification'} <span className="demo-chip">LIVE</span>
                 </strong>
-                <p>{message.demo ? message.body : message.body}</p>
+                <p>{message.body}</p>
                 <small>
                   {message.receivedAt?.toDate
                     ? message.receivedAt.toDate().toLocaleString()
@@ -940,18 +913,14 @@ function InboxPage({ orders }) {
                   · Order {message.orderId || message.id}
                 </small>
               </div>
-              <strong className="message-code">{message.demo ? message.code : 'Received'}</strong>
+              <strong className="message-code">Received</strong>
             </article>
           ))
         ) : (
           <div className="empty-state">
             <MessageSquare size={25} />
-            <strong>{user ? 'No messages received' : 'No demo messages yet'}</strong>
-            <p>
-              {user
-                ? 'Signed-in live messages will appear here after provider delivery.'
-                : 'Completed demo orders appear here as clearly simulated messages.'}
-            </p>
+            <strong>No messages received</strong>
+            <p>Messages will appear here after provider delivery.</p>
           </div>
         )}
       </section>
@@ -959,7 +928,7 @@ function InboxPage({ orders }) {
   )
 }
 
-function WalletPage({ store, user, onToast }) {
+function WalletPage({ user, onToast }) {
   const [amount, setAmount] = useState('5000')
   const [liveWallet, setLiveWallet] = useState(null)
   const [liveTransactions, setLiveTransactions] = useState([])
@@ -992,11 +961,6 @@ function WalletPage({ store, user, onToast }) {
     const value = Number(amount)
     if (!Number.isSafeInteger(value) || value < 500)
       return onToast('Enter a whole-Naira amount of at least ₦500.')
-    if (!user) {
-      store.addDemoFunds(value)
-      onToast(`₦${value.toLocaleString()} demo funds added. No payment occurred.`)
-      return
-    }
     setBusy(true)
     try {
       const { authorizationUrl } = await initializeWalletFunding(value)
@@ -1007,41 +971,31 @@ function WalletPage({ store, user, onToast }) {
       setBusy(false)
     }
   }
-  const balance = user ? liveWallet?.balanceNaira || 0 : store.balance
-  const transactions = user
-    ? liveTransactions.map((item) => ({
-        ...item,
-        amount: item.amount,
-        description: item.reference || item.id,
-        status: item.status || 'Live',
-        time: item.time,
-      }))
-    : store.transactions
+  const balance = liveWallet?.balanceNaira || 0
+  const transactions = liveTransactions.map((item) => ({
+    ...item,
+    amount: item.amount,
+    description: item.reference || item.id,
+    status: item.status || 'Live',
+    time: item.time,
+  }))
   return (
     <div className="view-root">
       <PageHeader
         eyebrow="Wallet"
         title="Your Wallet"
-        description={
-          user
-            ? 'Fund your wallet through verified Paystack checkout.'
-            : 'Manage demo funds. Paystack is not connected and no payments are being processed.'
-        }
+        description="Fund your wallet through verified Paystack checkout."
       />
       <div className="wallet-layout">
         <section className="wallet-balance-card">
           <Wallet size={21} />
-          <span>{user ? 'Available wallet balance' : 'Available demo balance'}</span>
+          <span>Available wallet balance</span>
           <strong>₦{balance.toLocaleString('en-NG')}.00</strong>
-          <small>{user ? 'SERVER-VERIFIED BALANCE' : 'SIMULATED BALANCE · NOT REAL MONEY'}</small>
+          <small>SERVER-VERIFIED BALANCE</small>
         </section>
         <section className="panel funding-panel">
-          <h2>{user ? 'Fund with Paystack' : 'Add Demo Funds'}</h2>
-          <p>
-            {user
-              ? 'Checkout is verified by the backend before your wallet is credited.'
-              : 'Test the wallet flow without making a payment.'}
-          </p>
+          <h2>Fund with Paystack</h2>
+          <p>Checkout is verified by the backend before your wallet is credited.</p>
           <form onSubmit={fundWallet}>
             <label className="field-label">
               Amount in Naira
@@ -1067,13 +1021,10 @@ function WalletPage({ store, user, onToast }) {
               ))}
             </div>
             <button className="button button-primary" type="submit" disabled={busy}>
-              {busy ? 'Opening checkout…' : user ? 'Continue to Paystack' : 'Add demo funds'}{' '}
-              <Plus size={16} />
+              {busy ? 'Opening checkout…' : 'Continue to Paystack'} <Plus size={16} />
             </button>
             <small className="form-disclaimer">
-              {user
-                ? 'Your wallet is credited only after server-side Paystack verification.'
-                : 'Paystack checkout becomes available after Firebase and backend configuration.'}
+              Your wallet is credited only after server-side Paystack verification.
             </small>
           </form>
         </section>
@@ -1473,10 +1424,9 @@ function AuthPage({ onToast }) {
 }
 
 function App() {
-  const store = useDemoStore()
   return (
     <BrowserRouter>
-      <AppLayout store={store} />
+      <AppLayout />
     </BrowserRouter>
   )
 }
