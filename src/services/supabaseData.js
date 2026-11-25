@@ -115,6 +115,52 @@ export async function createSupportTicket({ topic, subject, details }) {
   return data
 }
 
+export async function getAdminDashboard() {
+  const client = requireClient()
+  const { data: admin, error: adminError } = await client.rpc('is_admin')
+  if (adminError) throw adminError
+  if (!admin) throw new Error('Administrator access is required.')
+  const results = await Promise.all([
+    client
+      .from('profiles')
+      .select('id, display_name, email, created_at')
+      .order('created_at', { ascending: false }),
+    client.from('orders').select('*').order('created_at', { ascending: false }).limit(50),
+    client.from('support_tickets').select('*').order('created_at', { ascending: false }).limit(50),
+    client.from('catalog').select('*').order('country_code'),
+  ])
+  const failed = results.find(({ error }) => error)
+  if (failed) throw failed.error
+  return {
+    profiles: results[0].data,
+    orders: results[1].data,
+    tickets: results[2].data,
+    catalog: results[3].data,
+  }
+}
+
+export async function updateCatalogEntry(countryCode, values) {
+  const { data, error } = await requireClient()
+    .from('catalog')
+    .update({ ...values, updated_at: new Date().toISOString() })
+    .eq('country_code', countryCode)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateSupportTicketStatus(id, status) {
+  const { data, error } = await requireClient()
+    .from('support_tickets')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export function subscribeToUserTable(table, callback) {
   if (!supabaseConfigured || !supabase) return () => {}
   const channel = supabase

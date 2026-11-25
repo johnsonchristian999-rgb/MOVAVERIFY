@@ -5,10 +5,13 @@ import {
   createSupportTicket,
   getUserProfile,
   getUserWallet,
+  getAdminDashboard,
   listCatalog,
   listUserSupportTickets,
   listUserTransactions,
   updateUserProfile,
+  updateCatalogEntry,
+  updateSupportTicketStatus,
 } from './services/supabaseData.js'
 
 function useLoad(loader) {
@@ -330,6 +333,126 @@ export function LiveSettings({ user }) {
           </form>
         )}
         {message && <p role="status">{message}</p>}
+      </section>
+    </div>
+  )
+}
+
+export function LiveAdmin() {
+  const { data, error } = useLoad(getAdminDashboard)
+  const [message, setMessage] = useState('')
+  const [catalog, setCatalog] = useState(null)
+  const [tickets, setTickets] = useState(null)
+  const catalogRows = catalog || data?.catalog || []
+  const ticketRows = tickets || data?.tickets || []
+  async function toggleCatalog(entry) {
+    setMessage('')
+    try {
+      const updated = await updateCatalogEntry(entry.country_code, { active: !entry.active })
+      setCatalog(
+        catalogRows.map((row) => (row.country_code === updated.country_code ? updated : row)),
+      )
+      setMessage(`${updated.country_code} is now ${updated.active ? 'active' : 'inactive'}.`)
+    } catch (err) {
+      setMessage(err.message)
+    }
+  }
+  async function changeTicket(ticket, status) {
+    setMessage('')
+    try {
+      const updated = await updateSupportTicketStatus(ticket.id, status)
+      setTickets(ticketRows.map((row) => (row.id === updated.id ? updated : row)))
+      setMessage('Ticket status updated.')
+    } catch (err) {
+      setMessage(err.message)
+    }
+  }
+  if (error)
+    return (
+      <div className="view-root">
+        <h1>Admin Console</h1>
+        <div className="notice-banner" role="alert">
+          {error}
+        </div>
+      </div>
+    )
+  if (!data)
+    return (
+      <div className="view-root">
+        <p>Loading administrator workspace…</p>
+      </div>
+    )
+  return (
+    <div className="view-root">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Restricted area</p>
+          <h1>Admin Console</h1>
+          <p className="subtitle">Manage catalog availability and customer support.</p>
+        </div>
+      </div>
+      {message && (
+        <div className="notice-banner" role="status">
+          {message}
+        </div>
+      )}
+      <section className="metric-grid">
+        <article className="metric-card blue">
+          <div className="metric-copy">
+            <span>Users</span>
+            <strong>{data.profiles.length}</strong>
+          </div>
+        </article>
+        <article className="metric-card green">
+          <div className="metric-copy">
+            <span>Orders</span>
+            <strong>{data.orders.length}</strong>
+          </div>
+        </article>
+        <article className="metric-card purple">
+          <div className="metric-copy">
+            <span>Support tickets</span>
+            <strong>{ticketRows.length}</strong>
+          </div>
+        </article>
+      </section>
+      <section className="panel support-form">
+        <h2>Catalog countries</h2>
+        {catalogRows.map((entry) => (
+          <div className="order-row" key={entry.country_code}>
+            <strong>{names[entry.country_code] || entry.country_code}</strong>
+            <span>{entry.active ? 'Active' : 'Inactive'}</span>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={() => toggleCatalog(entry)}
+            >
+              {entry.active ? 'Disable' : 'Enable'}
+            </button>
+          </div>
+        ))}
+      </section>
+      <section className="panel support-form">
+        <h2>Support tickets</h2>
+        {ticketRows.length ? (
+          ticketRows.map((ticket) => (
+            <div className="order-row" key={ticket.id}>
+              <strong>{ticket.subject}</strong>
+              <span>{ticket.status}</span>
+              <select
+                value={ticket.status}
+                onChange={(event) => changeTicket(ticket, event.target.value)}
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+          ))
+        ) : (
+          <p>No support tickets.</p>
+        )}
       </section>
     </div>
   )

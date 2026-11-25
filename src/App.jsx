@@ -55,7 +55,14 @@ import {
   subscribeToUserTable,
 } from './services/supabaseData.js'
 import './App.css'
-import { LiveOverview, LiveBuy, LiveTransactions, LiveSupport, LiveSettings } from './LivePages.jsx'
+import {
+  LiveOverview,
+  LiveBuy,
+  LiveTransactions,
+  LiveSupport,
+  LiveSettings,
+  LiveAdmin,
+} from './LivePages.jsx'
 
 const countryNames = { US: 'United States', GB: 'United Kingdom', CA: 'Canada', DE: 'Germany' }
 
@@ -412,7 +419,7 @@ function AppLayout({ store }) {
           <Route path="/transactions" element={<LiveTransactions />} />
           <Route path="/support" element={<LiveSupport />} />
           <Route path="/settings" element={<LiveSettings user={user} />} />
-          <Route path="/admin/*" element={<AdminPage onToast={showToast} />} />
+          <Route path="/admin/*" element={<LiveAdmin />} />
           <Route
             path="*"
             element={<LiveOverview orders={accountOrders} displayName={displayName} />}
