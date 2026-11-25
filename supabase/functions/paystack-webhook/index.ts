@@ -47,31 +47,7 @@ Deno.serve(async (request) => {
     result.data.currency === 'NGN' &&
     result.data.customer?.email === payment.email
   if (!valid) return new Response('Payment verification failed', { status: 400 })
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('balance_naira')
-    .eq('user_id', payment.user_id)
-    .maybeSingle()
-  await supabase
-    .from('wallets')
-    .upsert({
-      user_id: payment.user_id,
-      balance_naira: (wallet?.balance_naira || 0) + payment.amount_naira,
-      updated_at: new Date().toISOString(),
-    })
-  await supabase
-    .from('payments')
-    .update({ status: 'success', credited_at: new Date().toISOString() })
-    .eq('reference', reference)
-  await supabase
-    .from('transactions')
-    .upsert({
-      id: reference,
-      user_id: payment.user_id,
-      type: 'credit',
-      amount_naira: payment.amount_naira,
-      reference,
-      status: 'success',
-    })
+  const { error } = await supabase.rpc('credit_verified_payment', { p_reference: reference })
+  if (error) return new Response('Unable to credit payment', { status: 500 })
   return new Response('ok')
 })

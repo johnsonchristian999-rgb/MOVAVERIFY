@@ -35,13 +35,6 @@ Deno.serve(async (request) => {
     const priceNaira = catalog?.pricing?.[service]?.[tier]
     if (!catalog || !Number.isSafeInteger(priceNaira) || priceNaira < 500)
       return json({ error: 'This service or price tier is unavailable.' }, 412)
-    const { data: wallet } = await supabase
-      .from('wallets')
-      .select('balance_naira')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    if ((wallet?.balance_naira || 0) < priceNaira)
-      return json({ error: 'Insufficient wallet funds.' }, 412)
     const inventoryResponse = await fetch(
       `${twilioBase()}/AvailablePhoneNumbers/${countryCode}/Local.json?SmsEnabled=true&PageSize=20`,
       { headers: twilioHeaders() },
@@ -50,35 +43,15 @@ Deno.serve(async (request) => {
     const number = inventory?.available_phone_numbers?.[0]?.phone_number
     if (!inventoryResponse.ok || !number)
       return json({ error: 'No provider inventory is available.' }, 503)
-    const order = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        country_code: countryCode,
-        service,
-        tier,
-        price_naira: priceNaira,
-        status: 'provisioning',
-      })
-      .select('id')
-      .single()
-      .then(({ data, error }) => {
-        if (error) throw error
-        return data
-      })
-    await supabase.from('wallets').upsert({
-      user_id: user.id,
-      balance_naira: (wallet?.balance_naira || 0) - priceNaira,
-      updated_at: new Date().toISOString(),
+    const { data: orderId, error: reservationError } = await supabase.rpc('reserve_number_order', {
+      p_user_id: user.id,
+      p_country_code: countryCode,
+      p_service: service,
+      p_tier: tier,
+      p_price_naira: priceNaira,
     })
-    await supabase.from('transactions').insert({
-      id: order.id,
-      user_id: user.id,
-      type: 'debit',
-      amount_naira: priceNaira,
-      reference: order.id,
-      status: 'reserved',
-    })
+    if (reservationError) throw reservationError
+    const order = { id: orderId }
     const form = new URLSearchParams({
       PhoneNumber: number,
       SmsUrl: Deno.env.get('MOVA_VERIFY_TWILIO_SMS_WEBHOOK_URL') || '',
@@ -90,9 +63,11 @@ Deno.serve(async (request) => {
     })
     const purchased = await purchaseResponse.json()
     if (!purchaseResponse.ok) {
-      await supabase.from('orders').update({ status: 'provider_review' }).eq('id', order.id)
-      await supabase.from('transactions').update({ status: 'provider_review' }).eq('id', order.id)
-      return json({ error: 'Provider allocation needs review.', orderId: order.id }, 503)
+      const { error: refundError } = await supabase.rpc('refund_failed_number_order', {
+        p_order_id: order.id,
+      })
+      if (refundError) throw refundError
+      return json({ error: 'Provider allocation failed. Your wallet has been refunded.' }, 503)
     }
     await supabase
       .from('orders')

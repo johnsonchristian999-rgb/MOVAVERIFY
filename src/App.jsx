@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   BrowserRouter,
   Link,
+  Navigate,
   NavLink,
   Route,
   Routes,
   useNavigate,
+  useLocation,
   useParams,
   useSearchParams,
 } from 'react-router-dom'
@@ -53,6 +55,9 @@ import {
   subscribeToUserTable,
 } from './services/supabaseData.js'
 import './App.css'
+import { LiveOverview, LiveBuy, LiveTransactions, LiveSupport, LiveSettings } from './LivePages.jsx'
+
+const countryNames = { US: 'United States', GB: 'United Kingdom', CA: 'Canada', DE: 'Germany' }
 
 const services = [
   'WhatsApp',
@@ -184,14 +189,15 @@ function AppLayout({ store }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState('')
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(undefined)
   const [liveOrders, setLiveOrders] = useState([])
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const showToast = (message) => {
+  const location = useLocation()
+  const showToast = useCallback((message) => {
     setToast(message)
     window.setTimeout(() => setToast(''), 2600)
-  }
+  }, [])
   useEffect(() => {
     if (!supabaseConfigured) return undefined
     return subscribeToSupabaseAuth(setUser)
@@ -232,29 +238,26 @@ function AppLayout({ store }) {
       active = false
     }
   }, [user, searchParams])
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Mova Verify User'
+  const displayName =
+    user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Mova Verify User'
   const initials = displayName
     .split(/\s+/)
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
     .toUpperCase()
-  const accountOrders = user ? liveOrders : store.orders
+  const accountOrders = liveOrders
   const links = [
     { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
     { to: '/buy', label: 'Buy a Number', icon: ShoppingBag },
     { to: '/orders', label: 'My Orders', icon: ClipboardList },
-    { to: '/inbox', label: 'SMS Inbox', icon: MessageSquare, badge: '3' },
+    { to: '/inbox', label: 'SMS Inbox', icon: MessageSquare },
     { to: '/wallet', label: 'Wallet', icon: Wallet },
     { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
     { to: '/support', label: 'Support', icon: Headphones },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
   async function handleLogout() {
-    if (!supabaseConfigured) {
-      showToast('You are using a guest demo account.')
-      return
-    }
     try {
       await logoutSupabaseUser()
       showToast('You have been signed out.')
@@ -262,6 +265,37 @@ function AppLayout({ store }) {
       showToast(error.message)
     }
   }
+
+  if (!supabaseConfigured)
+    return (
+      <main className="auth-unavailable">
+        <h1>Mova Verify is unavailable</h1>
+        <p>Authentication has not been configured for this deployment.</p>
+      </main>
+    )
+
+  if (location.pathname.startsWith('/auth/'))
+    return (
+      <>
+        <Routes>
+          <Route path="/auth/:mode" element={<AuthPage onToast={showToast} />} />
+        </Routes>
+        {toast && (
+          <div className="toast" role="status">
+            {toast}
+          </div>
+        )}
+      </>
+    )
+
+  if (user === undefined)
+    return (
+      <main className="auth-unavailable">
+        <p>Loading your secure workspace…</p>
+      </main>
+    )
+
+  if (!user) return <Navigate to="/auth/login" replace />
 
   return (
     <div className="app-shell">
@@ -299,20 +333,18 @@ function AppLayout({ store }) {
                 <br />
                 is secure
               </strong>
-              <small>Demo environment · no live provider connection</small>
+              <small>Authenticated account</small>
             </div>
           </div>
           <button
             className="profile-button"
             type="button"
-            onClick={() =>
-              user ? showToast(`Signed in as ${displayName}`) : navigate('/auth/login')
-            }
+            onClick={() => showToast(`Signed in as ${displayName}`)}
           >
-            <span className="avatar">{user ? initials : 'MV'}</span>
+            <span className="avatar">{initials}</span>
             <span className="profile-copy">
-              <strong>{user ? displayName : 'Guest account'}</strong>
-              <small>{user ? user.email : 'Sign in to continue'}</small>
+              <strong>{displayName}</strong>
+              <small>{user.email}</small>
             </span>
             <ChevronDown size={15} />
           </button>
@@ -357,14 +389,10 @@ function AppLayout({ store }) {
               aria-label="Open notifications"
             >
               <Bell size={20} />
-              <i>3</i>
             </button>
-            <button
-              className="top-profile"
-              onClick={() => navigate(user ? '/settings' : '/auth/login')}
-            >
-              <span className="avatar">{user ? initials : 'MV'}</span>
-              <strong>{user ? displayName : 'Sign in'}</strong>
+            <button className="top-profile" onClick={() => navigate('/settings')}>
+              <span className="avatar">{initials}</span>
+              <strong>{displayName}</strong>
               <ChevronDown size={14} />
             </button>
           </div>
@@ -372,47 +400,26 @@ function AppLayout({ store }) {
         <Routes>
           <Route
             path="/"
-            element={
-              <Overview
-                store={store}
-                orders={accountOrders}
-                displayName={displayName}
-                onBuy={() => navigate('/buy')}
-                onFunds={() => navigate('/wallet')}
-                onToast={showToast}
-              />
-            }
+            element={<LiveOverview orders={accountOrders} displayName={displayName} />}
           />
-          <Route path="/buy" element={<BuyPage store={store} user={user} onToast={showToast} />} />
+          <Route path="/buy" element={<LiveBuy />} />
           <Route path="/orders" element={<OrdersPage orders={accountOrders} />} />
           <Route path="/inbox" element={<InboxPage orders={accountOrders} />} />
           <Route
             path="/wallet"
             element={<WalletPage store={store} user={user} onToast={showToast} />}
           />
-          <Route path="/transactions" element={<TransactionsPage store={store} />} />
-          <Route path="/support" element={<SupportPage onToast={showToast} />} />
-          <Route path="/settings" element={<SettingsPage user={user} onToast={showToast} />} />
-          <Route path="/auth/:mode" element={<AuthPage onToast={showToast} />} />
+          <Route path="/transactions" element={<LiveTransactions />} />
+          <Route path="/support" element={<LiveSupport />} />
+          <Route path="/settings" element={<LiveSettings user={user} />} />
           <Route path="/admin/*" element={<AdminPage onToast={showToast} />} />
           <Route
             path="*"
-            element={
-              <Overview
-                store={store}
-                orders={accountOrders}
-                displayName={displayName}
-                onBuy={() => navigate('/buy')}
-                onFunds={() => navigate('/wallet')}
-                onToast={showToast}
-              />
-            }
+            element={<LiveOverview orders={accountOrders} displayName={displayName} />}
           />
         </Routes>
         <footer className="app-footer">
-          <span>
-            <b>DEMO MODE</b> · Simulated orders, balance and SMS. No real numbers or payments.
-          </span>
+          <span>Your account activity is stored securely.</span>
           <span>Mova Verify · Help&nbsp; · &nbsp;Privacy</span>
         </footer>
       </main>
@@ -477,10 +484,22 @@ function MetricCard({ icon: Icon, title, value, note, tone }) {
   )
 }
 
-function QuickPurchase({ onPurchase }) {
-  const [country, setCountry] = useState(countries[0].name)
-  const [service, setService] = useState(services[0])
+function QuickPurchase({ catalog, onPurchase }) {
+  const [countryCode, setCountryCode] = useState('')
+  const [service, setService] = useState('')
   const [tier, setTier] = useState('Standard')
+  const selectedCatalog = catalog.find((item) => item.country_code === countryCode)
+  const availableServices = selectedCatalog?.services || []
+  const tiers = service ? Object.keys(selectedCatalog?.pricing?.[service] || {}) : []
+  useEffect(() => {
+    if (!countryCode && catalog[0]) setCountryCode(catalog[0].country_code)
+  }, [catalog, countryCode])
+  useEffect(() => {
+    if (!availableServices.includes(service)) setService(availableServices[0] || '')
+  }, [availableServices, service])
+  useEffect(() => {
+    if (!tiers.includes(tier)) setTier(tiers[0] || '')
+  }, [tiers, tier])
   return (
     <section className="quick-purchase panel">
       <div className="quick-head">
@@ -502,15 +521,15 @@ function QuickPurchase({ onPurchase }) {
         className="purchase-form"
         onSubmit={(event) => {
           event.preventDefault()
-          onPurchase({ country, service, tier })
+          onPurchase({ countryCode, service, tier })
         }}
       >
         <label className="field-label">
           Select Country
-          <select value={country} onChange={(event) => setCountry(event.target.value)}>
-            {countries.map((item) => (
-              <option key={item.name} value={item.name}>
-                {item.flag}　{item.name}
+          <select value={countryCode} onChange={(event) => setCountryCode(event.target.value)}>
+            {catalog.map((item) => (
+              <option key={item.country_code} value={item.country_code}>
+                {countryNames[item.country_code] || item.country_code}
               </option>
             ))}
           </select>
@@ -518,7 +537,7 @@ function QuickPurchase({ onPurchase }) {
         <label className="field-label">
           Select Service
           <select value={service} onChange={(event) => setService(event.target.value)}>
-            {services.map((item) => (
+            {availableServices.map((item) => (
               <option key={item}>{item}</option>
             ))}
           </select>
@@ -526,13 +545,13 @@ function QuickPurchase({ onPurchase }) {
         <label className="field-label tier-field">
           Price tier
           <select value={tier} onChange={(event) => setTier(event.target.value)}>
-            <option>Economy</option>
-            <option>Standard</option>
-            <option>Premium</option>
+            {tiers.map((item) => (
+              <option key={item}>{item}</option>
+            ))}
           </select>
         </label>
         <button className="button button-primary" type="submit">
-          Find demo options <ArrowRight size={16} />
+          Buy number <ArrowRight size={16} />
         </button>
       </form>
     </section>
@@ -781,7 +800,7 @@ function OrdersPage({ orders }) {
       <PageHeader
         eyebrow="Account activity"
         title="My Orders"
-        description="Review your demo verification requests and order statuses."
+        description="Review your verification requests and order statuses."
       >
         <select
           className="select-control"
@@ -797,7 +816,7 @@ function OrdersPage({ orders }) {
       <div className="panel table-panel">
         <div className="table-intro">
           <strong>{filtered.length} orders</strong>
-          <span>Demo data · no provider connections</span>
+          <span>Your account orders</span>
         </div>
         <div className="table-scroll">
           <table>
@@ -883,7 +902,7 @@ function InboxPage({ orders }) {
         title="SMS Inbox"
         description={
           user
-            ? 'Live messages from your authenticated Firestore account.'
+            ? 'Messages received for your account.'
             : 'Messages are simulated in this demo. Live inbox requires sign-in and provider configuration.'
         }
       />
@@ -985,10 +1004,10 @@ function WalletPage({ store, user, onToast }) {
   const transactions = user
     ? liveTransactions.map((item) => ({
         ...item,
-        amount: item.amountNaira || 0,
+        amount: item.amount,
         description: item.reference || item.id,
         status: item.status || 'Live',
-        time: item.createdAt?.toDate ? item.createdAt.toDate().toLocaleString() : 'Processing',
+        time: item.time,
       }))
     : store.transactions
   return (
@@ -1063,7 +1082,7 @@ function TransactionsTable({ transactions }) {
       <div className="panel-header">
         <div>
           <h2>Wallet Activity</h2>
-          <p>Demo ledger entries saved in this browser</p>
+          <p>Wallet transactions for your account</p>
         </div>
       </div>
       {transactions.length ? (
@@ -1096,7 +1115,7 @@ function TransactionsTable({ transactions }) {
           </table>
         </div>
       ) : (
-        <div className="empty-state">No wallet transactions in this demo session.</div>
+        <div className="empty-state">No wallet transactions yet.</div>
       )}
     </section>
   )
@@ -1439,7 +1458,7 @@ function AuthPage({ onToast }) {
           {mode !== 'recover' && <Link to="/auth/recover">Forgot password?</Link>}
         </div>
         <Link className="back-link" to="/">
-          Back to demo dashboard
+          Back to dashboard
         </Link>
       </section>
     </div>
